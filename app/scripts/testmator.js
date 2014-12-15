@@ -63,6 +63,29 @@ var Testmator = (function ($, _) { // jshint ignore:line
         },
         done: function () {
           return done.apply(promise, arguments);
+        },
+        wrap: function (wrapper) {
+          var parent = this;
+
+          var wrapped = _.chain(parent)
+            .functions()
+            .without('getPage')
+            .map(function (name) {
+              return [
+                name,
+                function () { return wrapper(parent[name].apply(parent, arguments)); }
+              ];
+            }, this)
+            .object()
+            .value();
+
+          _.extend(wrapped, {
+            getpage: function () {
+              return parent.getPage();
+            }
+          });
+
+          return wrapped;
         }
       };
     };
@@ -88,22 +111,9 @@ var Testmator = (function ($, _) { // jshint ignore:line
       }
     };
 
-    var wrapped = _.chain(automator)
-      .functions()
-      .without('getPage')
-      .map(function (name) {
-        return [
-          name,
-          function () { return appendNamedAction(automator[name].apply(automator, arguments)); }
-        ];
-      })
-      .object()
-      .value();
+    var wrapped = automator.wrap(appendNamedAction);
 
     _.extend(wrapped, {
-      getpage: function () {
-        return automator.getPage();
-      },
       action: function () {
         return appendNamedAction(action.apply(automator, arguments));
       }
