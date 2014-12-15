@@ -42,6 +42,7 @@ var Testmator = (function ($, _) { // jshint ignore:line
       };
 
       return {
+        name: 'automator',
         getPage: function () {
           return page;
         },
@@ -64,24 +65,29 @@ var Testmator = (function ($, _) { // jshint ignore:line
         done: function () {
           return done.apply(promise, arguments);
         },
-        wrap: function (wrapper) {
+        wrap: function (wrap) {
           var parent = this;
 
           var wrapped = _.chain(parent)
             .functions()
-            .without('getPage')
+            .without('getPage', 'wrap')
             .map(function (name) {
               return [
                 name,
-                function () { return wrapper(parent[name].apply(parent, arguments)); }
+                function () {
+                  return wrap(parent[name].apply(parent, arguments));
+                }
               ];
-            }, this)
+            })
             .object()
             .value();
 
           _.extend(wrapped, {
-            getpage: function () {
+            getPage: function () {
               return parent.getPage();
+            },
+            wrap: function () {
+              return parent.wrap.apply(parent, arguments);
             }
           });
 

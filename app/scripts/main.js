@@ -31,7 +31,9 @@
       .test(function (app) {
         console.log(app.switchModal().isShown());
       })
-      .action('clickLaunchDemoModal')
+      .action(function (app) {
+        return app.clickLaunchDemoModal();
+      })
       .scope(function (dialog) {
         dialog.clickCloseDemoModal();
       })
