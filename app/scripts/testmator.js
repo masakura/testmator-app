@@ -34,7 +34,14 @@ var Testmator = (function ($, _) { // jshint ignore:line
 
     var wrap = function (promise) {
       var then = function () {
-        return wrap(promise.then.apply(promise, arguments));
+        var args = _.toArray(arguments);
+        var filter = _.first(args);
+        args[0] = function (target) {
+          var result = filter.call(target, target);
+          return (result && result.getPromise && result.getPromise()) || result;
+        };
+
+        return wrap(promise.then.apply(promise, args));
       };
 
       var done = function () {
@@ -45,6 +52,9 @@ var Testmator = (function ($, _) { // jshint ignore:line
         name: 'automator',
         getPage: function () {
           return page;
+        },
+        getPromise: function () {
+          return promise;
         },
         action: function (filter) {
           return then(function (target) {
@@ -70,7 +80,7 @@ var Testmator = (function ($, _) { // jshint ignore:line
 
           var wrapped = _.chain(parent)
             .functions()
-            .without('getPage', 'wrap')
+            .without('getPage', 'getPromise', 'wrap')
             .map(function (name) {
               return [
                 name,
@@ -85,6 +95,9 @@ var Testmator = (function ($, _) { // jshint ignore:line
           _.extend(wrapped, {
             getPage: function () {
               return parent.getPage();
+            },
+            getPromise: function () {
+              return parent.getPromise.apply(parent, arguments);
             },
             wrap: function () {
               return parent.wrap.apply(parent, arguments);
@@ -128,6 +141,33 @@ var Testmator = (function ($, _) { // jshint ignore:line
     return wrapped;
   };
 
+  // Use named action.
+  // ex: .clickAt(0)
+  var appendFunctionAction = function (automator) {
+    var wrapped = automator.wrap(appendFunctionAction);
+
+    var page = automator.getPage();
+
+    var pageProxy =_.chain(page)
+      .functions()
+      .map(function (name) {
+        return [
+          name,
+          function () {
+            var args = _.toArray(arguments);
+
+            return this.action(function (target) {
+              return target[name].apply(target, args);
+            });
+          }
+        ];
+      })
+      .object()
+      .value();
+
+    return _.extend(pageProxy, wrapped);
+  };
+
   return {
     $: $,
     // Page object base type.
@@ -167,7 +207,7 @@ var Testmator = (function ($, _) { // jshint ignore:line
       return PageObject;
     })(),
     wrap: function (page) {
-      return appendNamedAction(wrapAutomator(page));
+      return appendFunctionAction(appendNamedAction(wrapAutomator(page)));
     }
   };
 })(jQuery || $, _);
