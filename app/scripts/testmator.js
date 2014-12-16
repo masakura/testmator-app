@@ -178,31 +178,45 @@ var Testmator = (function ($, _) { // jshint ignore:line
     return _.extend({}, through, wrapper);
   };
 
+  // Wait Bootstrap animation.
   var appendWaitAction = function (automator) {
     var wrapper = createWrappedAutomator(automator, appendWaitAction);
 
     var action = wrapper.action;
+    var scope = wrapper.scope;
 
-    return _.extend(wrapper, {
-      name: 'WAIT',
-      action: function () {
+    var makeWait = function (func) {
+      return function () {
         var args = _.toArray(arguments);
         var filter = args[0];
 
         args[0] = function (target) {
           var result = filter(target);
 
-          // return if Deferred object.
-          if (result.then === $.Deferred().then) {
+          // If promise object.
+          if (result.then) {
             return result;
           }
 
-          var page = (result.getPage && result.getPage()) || result;
-          return $(document).promiseTransition(page);
+          // If Automator object.
+          if (result.getPromise) {
+            return result.getPromise().then(function (target) {
+              return $(document).promiseTransition(target);
+            });
+          }
+
+          // If Page object.
+          return $(document).promiseTransition(result);
         };
 
-        return action.apply(wrapper, args);
-      }
+        return func.apply(wrapper, args);
+      };
+    };
+
+    return _.extend(wrapper, {
+      name: 'WAIT',
+      action: makeWait(action),
+      scope: makeWait(scope)
     });
   };
 

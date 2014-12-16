@@ -29,20 +29,15 @@
   $(document).on('click', '#test1', function () {
     Testmator.wrap(app)
       .test(function (app) {
-        console.log(app.switchModal().isShown());
+        console.log(!app.switchModal().isShown());
       })
-      .action(function (app) {
-        return app.clickLaunchDemoModal();
-      })
+      .action('clickLaunchDemoModal')
       .scope(function (dialog) {
         return Testmator.wrap(dialog)
           .test(function () {
             console.log(dialog.isShown());
           })
-          .clickCloseDemoModal()
-          .scope(function (app) {
-            return $(document).promiseTransition(app);
-          });
+          .clickCloseDemoModal();
       })
       .test(function (app) {
         console.log(!app.switchModal().isShown());
