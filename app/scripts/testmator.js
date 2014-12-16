@@ -81,45 +81,59 @@ var Testmator = (function ($, _) { // jshint ignore:line
     return wrap(promise);
   };
 
+  var createWrappedAutomator = function (automator, wrap) {
+    var throughs = ['getPage', 'getPromise', 'done'];
+
+    var through = _.chain(throughs)
+      .map(function (name) {
+        return [
+          name,
+          $.proxy(automator[name], automator)
+        ];
+      })
+      .object()
+      .value();
+
+    var wrapper = _.chain(automator)
+      .functions()
+      .difference(throughs)
+      .map(function (name) {
+        return [
+          name,
+          function () {
+            return wrap(automator[name].apply(automator, arguments));
+          }
+        ];
+      })
+      .object()
+      .value();
+
+    return _.extend({}, through, wrapper);
+  };
+
   // Use named action.
   // ex: .action('clickAt', 0)
   var appendNamedAction = function (automator) {
-    var createWrapper = function (automator) {
-      return {
-        name: 'NAMED',
-        getPage: $.proxy(automator.getPage, automator),
-        getPromise: $.proxy(automator.getPromise, automator),
-        action: function () {
-          return appendNamedAction(automator.action.apply(automator, arguments));
-        },
-        scope: function () {
-          return appendNamedAction(automator.scope.apply(automator, arguments));
-        },
-        test: function () {
-          return appendNamedAction(automator.test.apply(automator, arguments));
-        },
-        done: function () {
-          return automator.done.apply(automator, arguments);
-        }
-      };
-    };
-
-    var wrapper = createWrapper(automator);
+    var wrapper = createWrappedAutomator(automator, appendNamedAction);
     var action = wrapper.action;
-    wrapper.action = function () {
-      var args = _.toArray(arguments);
-      var methodName = args.shift();
 
-      if (!_.isString(methodName)) {
-        // .action(function (target) { return target.clickAt(0); })
-        return action.apply(this, arguments);
+    _.extend(wrapper, {
+      name: 'NAMED',
+      action:  function () {
+        var args = _.toArray(arguments);
+        var methodName = args.shift();
+
+        if (!_.isString(methodName)) {
+          // .action(function (target) { return target.clickAt(0); })
+          return action.apply(this, arguments);
+        }
+
+        // .action('clickAt', 0)
+        return action.call(automator, function (target) {
+          return target[methodName].apply(target, args);
+        });
       }
-
-      // .action('clickAt', 0)
-      return action.call(automator, function (target) {
-        return target[methodName].apply(target, args);
-      });
-    };
+    });
 
     return wrapper;
   };
@@ -146,22 +160,10 @@ var Testmator = (function ($, _) { // jshint ignore:line
       .object()
       .value();
 
-    return _.extend(pageProxy, {
-      getPage: $.proxy(automator.getPage, automator),
-      getPromise: $.proxy(automator.getPromise, automator),
-      action: function () {
-        return appendFunctionAction(automator.action.apply(automator, arguments));
-      },
-      scope: function () {
-        return appendFunctionAction(automator.scope.apply(automator, arguments));
-      },
-      test: function () {
-        return appendFunctionAction(automator.test.apply(automator, arguments));
-      },
-      done: function () {
-        return automator.done.apply(automator, arguments);
-      }
-    });
+    return _.extend(pageProxy,
+                    createWrappedAutomator(automator, appendFunctionAction), {
+                      name: 'FUNCTION'
+                    });
   };
 
   var u = _.clone(_);
