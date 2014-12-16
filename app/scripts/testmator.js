@@ -74,37 +74,6 @@ var Testmator = (function ($, _) { // jshint ignore:line
         },
         done: function () {
           return done.apply(promise, arguments);
-        },
-        wrap: function (wrap) {
-          var parent = this;
-
-          var wrapped = _.chain(parent)
-            .functions()
-            .without('getPage', 'getPromise', 'wrap')
-            .map(function (name) {
-              return [
-                name,
-                function () {
-                  return wrap(parent[name].apply(parent, arguments));
-                }
-              ];
-            })
-            .object()
-            .value();
-
-          _.extend(wrapped, {
-            getPage: function () {
-              return parent.getPage();
-            },
-            getPromise: function () {
-              return parent.getPromise.apply(parent, arguments);
-            },
-            wrap: function () {
-              return parent.wrap.apply(parent, arguments);
-            }
-          });
-
-          return wrapped;
         }
       };
     };
@@ -130,23 +99,28 @@ var Testmator = (function ($, _) { // jshint ignore:line
       }
     };
 
-    var wrapped = automator.wrap(appendNamedAction);
-
-    _.extend(wrapped, {
+    return {
       name: 'NAMED',
+      getPage: $.proxy(automator.getPage, automator),
+      getPromise: $.proxy(automator.getPromise, automator),
       action: function () {
-        return appendNamedAction(action.apply(automator, arguments));
+        return appendNamedAction(action.apply(this, arguments));
+      },
+      scope: function () {
+        return appendNamedAction(automator.scope.apply(automator, arguments));
+      },
+      test: function () {
+        return appendNamedAction(automator.test.apply(automator, arguments));
+      },
+      done: function () {
+        return automator.done.apply(automator, arguments);
       }
-    });
-
-    return wrapped;
+    };
   };
 
   // Use named action.
   // ex: .clickAt(0)
   var appendFunctionAction = function (automator) {
-    var wrapped = automator.wrap(appendFunctionAction);
-
     var page = automator.getPage();
 
     var pageProxy =_.chain(page)
@@ -166,7 +140,22 @@ var Testmator = (function ($, _) { // jshint ignore:line
       .object()
       .value();
 
-    return _.extend(pageProxy, wrapped, {name: 'FUNCTION'});
+    return _.extend(pageProxy, {
+      getPage: $.proxy(automator.getPage, automator),
+      getPromise: $.proxy(automator.getPromise, automator),
+      action: function () {
+        return appendFunctionAction(automator.action.apply(automator, arguments));
+      },
+      scope: function () {
+        return appendFunctionAction(automator.scope.apply(automator, arguments));
+      },
+      test: function () {
+        return appendFunctionAction(automator.test.apply(automator, arguments));
+      },
+      done: function () {
+        return automator.done.apply(automator, arguments);
+      }
+    });
   };
 
   var u = _.clone(_);

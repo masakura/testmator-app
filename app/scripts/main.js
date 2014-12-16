@@ -31,7 +31,8 @@
       .test(function (app) {
         console.log(app.switchModal().isShown());
       })
-      .clickLaunchDemoModal()
+//      .clickLaunchDemoModal()
+      .action('clickLaunchDemoModal')
       .scope(function (dialog) {
         return Testmator.wrap(dialog)
           .test(function () {
