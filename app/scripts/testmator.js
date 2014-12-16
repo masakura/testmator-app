@@ -168,6 +168,12 @@ var Testmator = (function ($, _) { // jshint ignore:line
     return _.extend(pageProxy, wrapped);
   };
 
+  var u = _.clone(_);
+  u.mixin({
+    appendNamedAction: appendNamedAction,
+    appendFunctionAction: appendFunctionAction
+  });
+
   return {
     $: $,
     // Page object base type.
@@ -207,7 +213,10 @@ var Testmator = (function ($, _) { // jshint ignore:line
       return PageObject;
     })(),
     wrap: function (page) {
-      return appendFunctionAction(appendNamedAction(wrapAutomator(page)));
+      return u.chain(wrapAutomator(page))
+        .appendNamedAction()
+        .appendFunctionAction()
+        .value();
     }
   };
 })(jQuery || $, _);
