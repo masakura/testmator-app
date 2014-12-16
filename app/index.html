@@ -17,9 +17,12 @@
     <!-- endbuild -->
   </head>
   <body>
-    <div class="container">
+    <div id="page" class="container">
       <button id="launch-demo-modal" type="button" class="btn btn-default" data-toggle="modal" data-target="#myModal">
         Launch demo modal
+      </button>
+      <button id="throw-error" type="button" class="btn btn-default">
+        Throw Error
       </button>
       <button id="test1" type="button" class="btn btn-default">Test#1</button>
       <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
@@ -86,6 +89,17 @@
         </div>
       </div>
     </div>
+
+    <script id="alert-template" type="text/html">
+      <div id="alert" class="alert alert-danger alert-dismissible fade in" role="alert">
+        <button id="close-alert" class="close" data-dismiss="alert" type="button">
+          <span aria-hidden="true">×</span>
+          <span class="sr-only">Close</span>
+        </button>
+        <h4>Error!</h4>
+        <p>Error occured.</p>
+      </div>
+    </script>
 
     <!-- build:js(.) scripts/vendor.js -->
     <!-- bower:js -->

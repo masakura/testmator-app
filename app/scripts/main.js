@@ -26,6 +26,13 @@
     }
   });
 
+  var AlertPage = Testmator.PageObject.extend({
+    clickClose: function () {
+      this.click('#close-alert');
+      return this.switchParent();
+    }
+  });
+
   var AppPage = Testmator.PageObject.extend({
     switchModal: function () {
       return new ModalPage({
@@ -39,9 +46,19 @@
         parent: this
       });
     },
+    switchAlert: function () {
+      return new AlertPage({
+        el: this.$('#alert'),
+        parent: this
+      });
+    },
     clickLaunchDemoModal: function () {
       this.click('#launch-demo-modal');
       return this.switchModal();
+    },
+    clickThrowError: function () {
+      this.click('#throw-error');
+      return this.switchAlert();
     }
   });
 
@@ -93,10 +110,16 @@
           })
           .switchParent();
       })
+      .action('clickThrowError')
+      .scope(function (alert) {
+        return Testmator.wrap(alert)
+          .clickClose();
+      })
       .done(function () { console.log('DONE'); });
   });
 
-  $(document).on('show.bs.modal shown.bs.modal hide.bs.modal hidden.bs.modal', function (e) {
-    console.log(e.type);
+  $(document).on('click', '#throw-error', function () {
+    var template = _.template($('#alert-template').html());
+    $('#page').append(template());
   });
 })();

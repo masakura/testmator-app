@@ -38,8 +38,10 @@ var Testmator = (function ($, _) { // jshint ignore:line
       }
     };
 
+    // [Bootstrap Alert] Cannot catch closed.bs.alert event.
+
     var eventNames = ['show', 'shown', 'hide', 'hidden'];
-    var types = ['bs.modal', 'bs.collapse'];
+    var types = ['bs.modal', 'bs.collapse', 'bs.dropdown', 'bs.alert'];
     var events = _.chain(eventNames)
       .map(function (name) {
         return _.map(types, function (type) { return name + '.' + type; });
