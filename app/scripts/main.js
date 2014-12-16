@@ -11,10 +11,31 @@
     }
   });
 
+  var AccordionPage = Testmator.PageObject.extend({
+    names: {
+      1: 'collapseOne',
+      2: 'collapseTwo',
+      3: 'collapseThree'
+    },
+    clickAt: function (number) {
+      this.click('[data-toggle="collapse"][href="#' + this.names[number] + '"]');
+      return this;
+    },
+    isShownAt: function (number) {
+      return this.$('#' + this.names[number]).hasClass('in');
+    }
+  });
+
   var AppPage = Testmator.PageObject.extend({
     switchModal: function () {
       return new ModalPage({
         el: this.$('#myModal'),
+        parent: this
+      });
+    },
+    switchAccordion: function () {
+      return new AccordionPage({
+        el: this.$('#accordion'),
         parent: this
       });
     },
@@ -41,6 +62,36 @@
       })
       .test(function (app) {
         console.log(!app.switchModal().isShown());
+      })
+      .action(function (app) {
+        return app.switchAccordion();
+      })
+      .scope(function (accordion) {
+        return Testmator.wrap(accordion)
+          .test(function () {
+            console.log(accordion.isShownAt(1));
+            console.log(!accordion.isShownAt(2));
+            console.log(!accordion.isShownAt(3));
+          })
+          .clickAt(1)
+          .test(function () {
+            console.log(!accordion.isShownAt(1));
+            console.log(!accordion.isShownAt(2));
+            console.log(!accordion.isShownAt(3));
+          })
+          .clickAt(2)
+          .test(function () {
+            console.log(!accordion.isShownAt(1));
+            console.log(accordion.isShownAt(2));
+            console.log(!accordion.isShownAt(3));
+          })
+          .clickAt(1)
+          .test(function () {
+            console.log(accordion.isShownAt(1));
+            console.log(!accordion.isShownAt(2));
+            console.log(!accordion.isShownAt(3));
+          })
+          .switchParent();
       })
       .done(function () { console.log('DONE'); });
   });
