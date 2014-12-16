@@ -178,6 +178,34 @@ var Testmator = (function ($, _) { // jshint ignore:line
     return _.extend({}, through, wrapper);
   };
 
+  var appendWaitAction = function (automator) {
+    var wrapper = createWrappedAutomator(automator, appendWaitAction);
+
+    var action = wrapper.action;
+
+    return _.extend(wrapper, {
+      name: 'WAIT',
+      action: function () {
+        var args = _.toArray(arguments);
+        var filter = args[0];
+
+        args[0] = function (target) {
+          var result = filter(target);
+
+          // return if Deferred object.
+          if (result.then === $.Deferred().then) {
+            return result;
+          }
+
+          var page = (result.getPage && result.getPage()) || result;
+          return $(document).promiseTransition(page);
+        };
+
+        return action.apply(wrapper, args);
+      }
+    });
+  };
+
   // Use named action.
   // ex: .action('clickAt', 0)
   var appendNamedAction = function (automator) {
@@ -235,6 +263,7 @@ var Testmator = (function ($, _) { // jshint ignore:line
 
   var u = _.clone(_);
   u.mixin({
+    appendWaitAction: appendWaitAction,
     appendNamedAction: appendNamedAction,
     appendFunctionAction: appendFunctionAction
   });
@@ -279,6 +308,7 @@ var Testmator = (function ($, _) { // jshint ignore:line
     })(),
     wrap: function (page) {
       return u.chain(wrapAutomator(page))
+        .appendWaitAction()
         .appendNamedAction()
         .appendFunctionAction()
         .value();

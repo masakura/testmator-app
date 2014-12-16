@@ -32,8 +32,7 @@
         console.log(app.switchModal().isShown());
       })
       .action(function (app) {
-        var dialog = app.clickLaunchDemoModal();
-        return $(document).promiseTransition(dialog);
+        return app.clickLaunchDemoModal();
       })
       .scope(function (dialog) {
         return Testmator.wrap(dialog)
