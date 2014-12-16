@@ -49,7 +49,7 @@ var Testmator = (function ($, _) { // jshint ignore:line
       };
 
       return {
-        name: 'automator',
+        name: 'AUTOMATOR',
         getPage: function () {
           return page;
         },
@@ -133,6 +133,7 @@ var Testmator = (function ($, _) { // jshint ignore:line
     var wrapped = automator.wrap(appendNamedAction);
 
     _.extend(wrapped, {
+      name: 'NAMED',
       action: function () {
         return appendNamedAction(action.apply(automator, arguments));
       }
@@ -165,7 +166,7 @@ var Testmator = (function ($, _) { // jshint ignore:line
       .object()
       .value();
 
-    return _.extend(pageProxy, wrapped);
+    return _.extend(pageProxy, wrapped, {name: 'FUNCTION'});
   };
 
   var u = _.clone(_);
