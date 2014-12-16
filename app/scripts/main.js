@@ -31,13 +31,19 @@
       .test(function (app) {
         console.log(app.switchModal().isShown());
       })
-      .clickLaunchDemoModal()
+      .action(function (app) {
+        var dialog = app.clickLaunchDemoModal();
+        return $(document).promiseTransition(dialog);
+      })
       .scope(function (dialog) {
         return Testmator.wrap(dialog)
           .test(function () {
             console.log(dialog.isShown());
           })
-          .clickCloseDemoModal();
+          .clickCloseDemoModal()
+          .scope(function (app) {
+            return $(document).promiseTransition(app);
+          });
       })
       .test(function (app) {
         console.log(!app.switchModal().isShown());

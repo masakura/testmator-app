@@ -1,6 +1,73 @@
 var Testmator = (function ($, _) { // jshint ignore:line
   'use strict';
 
+  (function () {
+    var monitor = {
+      level_: 0,
+      callbacks: [],
+      start: function () {
+        this.level_++;
+      },
+      end: function () {
+        if (this.level_ <= 0) {
+          return;
+        }
+
+        this.level_--;
+
+        if (this.level_ <= 0) {
+          this.executeAll_();
+        }
+      },
+      register: function (callback) {
+        this.callbacks.push(callback);
+
+        if (this.level_ <= 0) {
+          this.executeAll_();
+        }
+      },
+      executeAll_: function () {
+        var callbacks = this.callbacks;
+        this.callbacks = [];
+
+        setTimeout(function () {
+          callbacks.forEach(function (callback) {
+            callback();
+          });
+        }, 11);
+      }
+    };
+
+    var eventNames = ['show', 'shown', 'hide', 'hidden'];
+    var types = ['bs.modal', 'bs.collapse'];
+    var events = _.chain(eventNames)
+      .map(function (name) {
+        return _.map(types, function (type) { return name + '.' + type; });
+      })
+      .flatten()
+      .join(' ')
+      .value();
+
+    $(document).on(events, function (e) {
+      if (e.type === 'hide' || e.type === 'show') {
+        monitor.start();
+      } else if (e.type === 'hidden' || e.type === 'shown') {
+        monitor.end();
+      }
+    });
+
+    $.fn.promiseTransition = function () {
+      var deferred = $.Deferred();
+      var args = _.toArray(arguments);
+
+      monitor.register(function () {
+        deferred.resolve.apply(deferred, args);
+      });
+
+      return deferred.promise();
+    };
+  })();
+
   // Helper function inheritance, like Backbone's extend.
   var extend = function (prototypePropeties, staticProperties) {
     var parent = this;
