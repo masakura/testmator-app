@@ -84,38 +84,44 @@ var Testmator = (function ($, _) { // jshint ignore:line
   // Use named action.
   // ex: .action('clickAt', 0)
   var appendNamedAction = function (automator) {
-    var action = function () {
+    var createWrapper = function (automator) {
+      return {
+        name: 'NAMED',
+        getPage: $.proxy(automator.getPage, automator),
+        getPromise: $.proxy(automator.getPromise, automator),
+        action: function () {
+          return appendNamedAction(automator.action.apply(automator, arguments));
+        },
+        scope: function () {
+          return appendNamedAction(automator.scope.apply(automator, arguments));
+        },
+        test: function () {
+          return appendNamedAction(automator.test.apply(automator, arguments));
+        },
+        done: function () {
+          return automator.done.apply(automator, arguments);
+        }
+      };
+    };
+
+    var wrapper = createWrapper(automator);
+    var action = wrapper.action;
+    wrapper.action = function () {
       var args = _.toArray(arguments);
       var methodName = args.shift();
 
-      if (_.isString(methodName)) {
-        // .action('clickAt', 0)
-        return automator.action.call(automator, function (target) {
-          return target[methodName].apply(target, args);
-        });
-      } else {
-        // .action(function (target) { target.clickAt(0); })
-        return automator.action.apply(automator, arguments);
+      if (!_.isString(methodName)) {
+        // .action(function (target) { return target.clickAt(0); })
+        return action.apply(this, arguments);
       }
+
+      // .action('clickAt', 0)
+      return action.call(automator, function (target) {
+        return target[methodName].apply(target, args);
+      });
     };
 
-    return {
-      name: 'NAMED',
-      getPage: $.proxy(automator.getPage, automator),
-      getPromise: $.proxy(automator.getPromise, automator),
-      action: function () {
-        return appendNamedAction(action.apply(this, arguments));
-      },
-      scope: function () {
-        return appendNamedAction(automator.scope.apply(automator, arguments));
-      },
-      test: function () {
-        return appendNamedAction(automator.test.apply(automator, arguments));
-      },
-      done: function () {
-        return automator.done.apply(automator, arguments);
-      }
-    };
+    return wrapper;
   };
 
   // Use named action.
